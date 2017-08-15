@@ -1,6 +1,6 @@
 {
   "name": "zpl_json.c",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Small, fast and standard-friendly JSON parser.",
   "main": "include/zpl_json.h",
   "directories": {
@@ -28,7 +28,7 @@
     "url": "https://github.com/zpl-c/zpl-json/issues"
   },
   "homepage": "https://github.com/zpl-c/zpl-json#readme",
-  "devDependencies": {
+  "dependencies": {
     "zpl.c": "^2.0.2"
   }
 }
