@@ -11,15 +11,16 @@ Warranty:
     No warranty is implied, use at your own risk.
 
 Usage:
-    #define ZPLJ_IMPLEMJSONATION exactly in ONE source file right BEFORE including the library, like:
+    #define ZPLJ_IMPLEMENTATION exactly in ONE source file right BEFORE including the library, like:
 
-    #define ZPLJ_IMPLEMJSONATION
+    #define ZPLJ_IMPLEMENTATION
     #include"zpl_json.h"
 
 Credits:
     Dominik Madarasz (GitHub: zaklaus)
 
 Version History:
+    1.0.4 - Header file fixes
     1.0.0 - Initial version
 
 */
