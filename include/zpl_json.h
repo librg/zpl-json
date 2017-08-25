@@ -6,23 +6,24 @@ License:
     This software is dual-licensed to the public domain and under the following
     license: you are granted a perpetual, irrevocable license to copy, modify,
     publish, and distribute this file as you see fit.
-
+    
 Warranty:
     No warranty is implied, use at your own risk.
-
+    
 Usage:
     #define ZPLJ_IMPLEMENTATION exactly in ONE source file right BEFORE including the library, like:
-
+    
     #define ZPLJ_IMPLEMENTATION
     #include"zpl_json.h"
-
+    
 Credits:
     Dominik Madarasz (GitHub: zaklaus)
-
+    
 Version History:
+    1.1.0 - Basic JSON5 support, comments and fixes
     1.0.4 - Header file fixes
     1.0.0 - Initial version
-
+    
 */
 
 #ifndef ZPL_INCLUDE_ZPL_JSON_H
@@ -84,25 +85,42 @@ extern "C" {
 extern "C" {
 #endif
 
+    b32 zplj__is_control_char(char c);
+    
     void zplj_parse(zplj_object_t *root, usize len, char *const source, zpl_allocator_t a, b32 strip_comments) {
         ZPL_ASSERT(root && source);
+        zpl_unused(len);
 
         char *dest = source;
 
         if (strip_comments) {
             b32 is_lit = false;
+            char lit_c = '\0';
             char *p = dest;
             char *b = dest;
             isize l = 0;
 
             while (*p) {
-                if (*p == '"') {
-                    is_lit = !is_lit;
-                    ++p;
-                    continue;
+                if (!is_lit) {
+                    if ((*p == '"' || *p == '\'')) {
+                        lit_c = *p;
+                        is_lit = true;
+                        ++p;
+                        continue;
+                    }
+                }
+                else {
+                    /**/ if (*p == '\\' && *(p+1) && *(p+1) == lit_c) {
+                        p+=2;
+                        continue;
+                    }
+                    else if (*p == lit_c) {
+                        is_lit = false;
+                        ++p;
+                        continue;
+                    }
                 }
 
-                // TODO(ZaKlaus): @fixme Better literal detection
                 if (!is_lit) {
                     // NOTE(ZaKlaus): block comment
                     if (p[0] == '/' && p[1] == '*') {
@@ -135,6 +153,7 @@ extern "C" {
 
                 ++p;
             }
+            zpl_printf("%s\n", dest);
         }
 
         zplj_object_t root_ = {0};
@@ -194,12 +213,24 @@ extern "C" {
         char *b = base;
         char *e = base;
 
-        /**/ if (*p == '"') {
+        /**/ if (*p == '"' || *p == '\'') {
+            char c = *p;
             obj->type = zplj_type_string_ev;
             b = p+1;
+            e = b;
             obj->string = b;
+            
+            while(*e) {
+                /**/ if (*e == '\\' && *(e+1) && *(e+1) == c) {
+                    e += 2;
+                    continue;
+                }
+                else if (*e == c) {
+                    break;
+                }
+                ++e;
+            }
 
-            e = zplj__skip(b, '"');
             *e = '\0';
             p = e+1;
         }
@@ -307,7 +338,7 @@ extern "C" {
 
         return p;
     }
-
+    
     char *zplj__parse_object(zplj_object_t *obj, char *base, zpl_allocator_t a) {
         ZPL_ASSERT(obj && base);
         char *p = base;
@@ -324,25 +355,52 @@ extern "C" {
             zplj_object_t node = {0};
             p = zplj__trim(p);
             if (*p == '}') return p;
-            ZPL_ASSERT(*p == '"');
-            b = ++p;
-
-            node.name = b;
-
-            e = zplj__skip(b, '"');
-            *e = '\0';
+            
+            if (*p == '"' || *p == '\'') {
+                char c = *p;
+                b = ++p;
+                e = zplj__skip(b, c);
+                node.name = b;
+                *e = '\0';
+                
+                p = ++e;
+                p = zplj__trim(p);
+                ZPL_ASSERT(*p && *p == ':');
+            }
+            else {
+                /**/ if (*p == '[') {
+                    node.name = '\0';
+                    p = zplj__parse_value(&node, p, a);
+                    goto l_parsed;
+                }
+                else if (zpl_char_is_alpha(*p)) {
+                    b = ++p;
+                    e = b;
+                    
+                    do {
+                        ++e;
+                    }
+                    while(*e && zpl_char_is_alphanumeric(*e) && !zpl_char_is_space(*e) && *e != ':');
+                    
+                    if (*e == ':') {
+                        p = e;
+                    }
+                    else {
+                        p = zplj__skip(e, ':');
+                    }
+                    
+                    *e = '\0';
+                    node.name = b;
+                }
+            }
 
             char errc = 0;
-            ZPL_ASSERT_MSG(zplj__validate_name(b, &errc), "Failed to validate name '%s'!\n Invalid char: '%c'.\n", b, errc);
-
-            p = ++e;
-
-            p = zplj__trim(p);
-
-            ZPL_ASSERT(*p && *p == ':');
+            ZPL_ASSERT_MSG(zplj__validate_name(node.name, &errc), "Failed to validate name '%s'!\n Invalid char: '%c'.\n", node.name, errc);
 
             p = zplj__trim(p+1);
             p = zplj__parse_value(&node, p, a);
+            
+            l_parsed:
 
             zpl_array_append(obj->nodes, node);
 
