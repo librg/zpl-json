@@ -20,6 +20,8 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    1.4.0 - Added Infinity and NaN constants
+    1.3.0 - Added multi-line backtick strings
     1.2.0 - More JSON5 features and bugfixes
     1.1.1 - Small mistake fixed
     1.1.0 - Basic JSON5 support, comments and fixes
@@ -34,6 +36,9 @@ Version History:
 #ifdef __cplusplus
 extern "C" {
 #endif
+    
+    // TODO(ZaKlaus): INFINITY, NAN
+    #include <math.h>
 
     typedef enum zplj_type_e {
         zplj_type_object_ev,
@@ -271,7 +276,7 @@ extern "C" {
             *e = '\0';
             p = e+1;
         }
-        else if (zpl_char_is_alpha(*p)) {
+        else if (zpl_char_is_alpha(*p) || (*p == '-' && !zpl_char_is_digit(*p))) {
             obj->type = zplj_type_constant_ev;
 
             /**/ if (!zpl_strncmp(p, "true", 4)) {
@@ -286,6 +291,27 @@ extern "C" {
                 obj->constant = zplj_constant_null_ev;
                 p += 4;
             }
+            else if (!zpl_strncmp(p, "Infinity", 8)) {
+                obj->type = zplj_type_real_ev;
+                obj->real = INFINITY;
+                p += 8;
+            }
+            else if (!zpl_strncmp(p, "-Infinity", 9)) {
+                obj->type = zplj_type_real_ev;
+                obj->real = -INFINITY;
+                p += 9;
+            }
+            else if (!zpl_strncmp(p, "NaN", 3)) {
+                obj->type = zplj_type_real_ev;
+                obj->real = NAN;
+                p += 3;
+            }
+            else if (!zpl_strncmp(p, "-NaN", 4)) {
+                obj->type = zplj_type_real_ev;
+                obj->real = -NAN;
+                p += 4;
+            }
+            
             else {
                 ZPL_ASSERT_MSG(false, "Failed to parse it!\n", p);
             }

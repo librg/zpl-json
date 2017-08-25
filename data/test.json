@@ -23,6 +23,10 @@
 	`,
 
 
+	beyond: Infinity,
+	not_a_number: -NaN,
+
+
 	_meta : {
 		a: 3,
 		b: .4,
