@@ -20,6 +20,7 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    2.0.3 - Small bugfix in name with underscores
     2.0.1 - Catch error in name
     2.0.0 - Added basic error handling
     1.4.0 - Added Infinity and NaN constants
@@ -34,6 +35,12 @@ Version History:
 
 #ifndef ZPL_INCLUDE_ZPL_JSON_H
 #define ZPL_INCLUDE_ZPL_JSON_H
+
+#ifdef ZPLJ_DEBUG
+#define ZPLJ_ASSERT ZPL_ASSERT(0)
+#else
+#define ZPLJ_ASSERT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -324,9 +331,8 @@ extern "C" {
                 obj->real = -NAN;
                 p += 4;
             }
-            
             else {
-                if (err_code) *err_code = zplj_error_invalid_value_ev;
+                ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_value_ev;
                 return NULL;
             }
         }
@@ -402,7 +408,7 @@ extern "C" {
             }
 
             if (*e == '\0') {
-                if (err_code) *err_code = zplj_error_invalid_value_ev;
+                ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_value_ev;
             }
 
             // NOTE(ZaKlaus): @enhance
@@ -482,7 +488,7 @@ extern "C" {
                 p = zplj__trim(p);
 
                 if (*p && *p != ':') {
-                    if (err_code) *err_code = zplj_error_invalid_name_ev;
+                    ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_name_ev;
                     return NULL;
                 }
             }
@@ -499,7 +505,8 @@ extern "C" {
                     do {
                         ++e;
                     }
-                    while(*e && zpl_char_is_alphanumeric(*e) && !zpl_char_is_space(*e) && *e != ':');
+                    while(*e && (zpl_char_is_alphanumeric(*e) || *e == '_') 
+                          && !zpl_char_is_space(*e) && *e != ':');
                     
                     if (*e == ':') {
                         p = e;
@@ -515,7 +522,7 @@ extern "C" {
                         p = e;
                         
                         if (*p && *p != ':') {
-                            if (err_code) *err_code = zplj_error_invalid_name_ev;
+                            ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_name_ev;
                             return NULL;
                         }                        
                     }
@@ -528,7 +535,7 @@ extern "C" {
 
             char errc = 0;
             if (!zplj__validate_name(node.name, &errc)) {
-                if (err_code) *err_code = zplj_error_invalid_name_ev;
+                ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_name_ev;
                 return NULL;
             }
 
@@ -553,7 +560,7 @@ extern "C" {
                 return p;
             }
             else {
-                if (err_code) *err_code = zplj_error_invalid_value_ev;
+                ZPLJ_ASSERT; if (err_code) *err_code = zplj_error_invalid_value_ev;
                 return NULL;
             }
         }
