@@ -20,6 +20,7 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    1.2.0 - More JSON5 features and bugfixes
     1.1.1 - Small mistake fixed
     1.1.0 - Basic JSON5 support, comments and fixes
     1.0.4 - Header file fixes
@@ -48,9 +49,18 @@ extern "C" {
         zplj_constant_false_ev,
         zplj_constant_true_ev,
     } zplj_constant_e;
+    
+    // TODO(ZaKlaus): Error handling
+    
+    typedef enum zplj_name_style_e {
+        zplj_name_style_double_quote_ev,
+        zplj_name_style_single_quote_ev,
+        zplj_name_style_no_quotes_ev,
+    } zplj_name_style_e;
 
     typedef struct zplj_object_t {
         zpl_allocator_t backing;
+        u8    name_style;
         char *name;
         u8    type;
         zpl_array_t(struct zplj_object_t) nodes;
@@ -221,8 +231,13 @@ extern "C" {
             obj->string = b;
             
             while(*e) {
-                /**/ if (*e == '\\' && *(e+1) && *(e+1) == c) {
+                /**/ if (*e == '\\' && *(e+1) == c) {
                     e += 2;
+                    continue;
+                }
+                else if (*e == '\\' && (*(e+1) == '\r' || *(e+1) == '\n')) {
+                    *e = ' ';
+                    e++;
                     continue;
                 }
                 else if (*e == c) {
@@ -254,7 +269,8 @@ extern "C" {
             }
         }
         else if (zpl_char_is_digit(*p) ||
-                 *p == '+' || *p == '-') {
+                 *p == '+' || *p == '-' ||
+                 *p == '.') {
             obj->type = zplj_type_integer_ev;
 
             b = p;
@@ -267,18 +283,36 @@ extern "C" {
             else if (*e == '-') {
                 buf[ib++] = *e++;
             }
-
-            while(zpl_char_is_hex_digit(*e) || *e == 'x' || *e == 'X') {
-                buf[ib++] = *e++;
-            }
-
+            
             if (*e == '.') {
                 obj->type = zplj_type_real_ev;
-
+                buf[ib++] = '0';
+                
                 do {
                     buf[ib++] = *e;
                 }
                 while(zpl_char_is_digit(*++e));
+            }
+            else {
+                while(zpl_char_is_hex_digit(*e) || *e == 'x' || *e == 'X') {
+                    buf[ib++] = *e++;
+
+                }
+                
+                if (*e == '.') {
+                    obj->type = zplj_type_real_ev;
+                    u32 step = 0;
+                    
+                    do {
+                        buf[ib++] = *e;
+                        ++step;
+                    }
+                    while(zpl_char_is_digit(*++e));
+                    
+                    if (step < 2) {
+                        buf[ib++] = '0';
+                    }
+                }
             }
 
             i64 exp = 0; f32 eb = 10;
@@ -357,6 +391,13 @@ extern "C" {
             if (*p == '}') return p;
             
             if (*p == '"' || *p == '\'') {
+                if (*p == '"') {
+                    node.name_style = zplj_name_style_double_quote_ev;
+                }
+                else {
+                    node.name_style = zplj_name_style_single_quote_ev;
+                }
+                
                 char c = *p;
                 b = ++p;
                 e = zplj__skip(b, c);
@@ -373,8 +414,8 @@ extern "C" {
                     p = zplj__parse_value(&node, p, a);
                     goto l_parsed;
                 }
-                else if (zpl_char_is_alpha(*p)) {
-                    b = ++p;
+                else if (zpl_char_is_alpha(*p) || *p == '_' || *p == '$') {
+                    b = p;
                     e = b;
                     
                     do {
@@ -391,6 +432,7 @@ extern "C" {
                     
                     *e = '\0';
                     node.name = b;
+                    node.name_style = zplj_name_style_no_quotes_ev;
                 }
             }
 

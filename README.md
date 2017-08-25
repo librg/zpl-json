@@ -1,7 +1,7 @@
-# ZPL - JSON parser module
+# ZPL - JSON4 parser module
 [![npm version](https://badge.fury.io/js/zpl_json.c.svg)](https://badge.fury.io/js/zpl_json.c)
 
-A simple module used for parsing JSON files. It offers a simple interface that is JSON-standard friendly.
+A simple module used for parsing JSON5 files. It offers a simple interface that is JSON and JSON5-standard friendly.
 Thanks to the "at place" approach of parsing JSON tokens, the parser offers high speed advantage and low memory footprint.
 
 ## Usage
@@ -23,7 +23,19 @@ void dump_value(zplj_object_t *o, isize indent, b32 is_inline, b32 is_last) {
 
     if (!is_inline) {
         ind(indent);
-        zpl_printf("\"%s\": ", node->name);
+		switch(node->name_style) {
+            case zplj_name_style_double_quote_ev: {
+                zpl_printf("\"%s\": ", node->name);                
+            }break;
+            
+            case zplj_name_style_single_quote_ev: {
+                zpl_printf("\'%s\': ", node->name);                
+            }break;
+            
+            case zplj_name_style_no_quotes_ev: {
+                zpl_printf("%s: ", node->name);                
+            }break;
+        }
     }
 
     switch (node->type) {
