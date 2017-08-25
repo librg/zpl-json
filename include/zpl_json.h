@@ -20,6 +20,7 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    2.0.0 - Added basic error handling
     1.4.0 - Added Infinity and NaN constants
     1.3.0 - Added multi-line backtick strings
     1.2.0 - More JSON5 features and bugfixes
@@ -57,6 +58,11 @@ extern "C" {
     } zplj_constant_e;
     
     // TODO(ZaKlaus): Error handling
+    typedef enum zplj_error_e {
+        zplj_error_none_ev,
+        zplj_error_invalid_name_ev,
+        zplj_error_invalid_value_ev,
+    } zplj_error_e;
     
     typedef enum zplj_name_style_e {
         zplj_name_style_double_quote_ev,
@@ -80,12 +86,12 @@ extern "C" {
         };
     } zplj_object_t;
 
-    ZPL_DEF void zplj_parse(zplj_object_t *root, usize len, char *const source, zpl_allocator_t a, b32 strip_comments);
+    ZPL_DEF void zplj_parse(zplj_object_t *root, usize len, char *const source, zpl_allocator_t a, b32 strip_comments, u8 *err_code);
     ZPL_DEF void zplj_free (zplj_object_t *obj);
 
-    ZPL_DEF char *zplj__parse_object(zplj_object_t *obj, char *base, zpl_allocator_t a);
-    ZPL_DEF char *zplj__parse_value (zplj_object_t *obj, char *base, zpl_allocator_t a);
-    ZPL_DEF char *zplj__parse_array (zplj_object_t *obj, char *base, zpl_allocator_t a);
+    ZPL_DEF char *zplj__parse_object(zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code);
+    ZPL_DEF char *zplj__parse_value (zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code);
+    ZPL_DEF char *zplj__parse_array (zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code);
 
     ZPL_DEF char *zplj__trim        (char *str);
     ZPL_DEF char *zplj__skip        (char *str, char c);
@@ -104,7 +110,7 @@ extern "C" {
 
     b32 zplj__is_control_char(char c);
     
-    void zplj_parse(zplj_object_t *root, usize len, char *const source, zpl_allocator_t a, b32 strip_comments) {
+    void zplj_parse(zplj_object_t *root, usize len, char *const source, zpl_allocator_t a, b32 strip_comments, u8 *err_code) {
         ZPL_ASSERT(root && source);
         zpl_unused(len);
 
@@ -172,8 +178,9 @@ extern "C" {
             }
         }
 
+        if (err_code) *err_code = zplj_error_none_ev;
         zplj_object_t root_ = {0};
-        zplj__parse_object(&root_, dest, a);
+        zplj__parse_object(&root_, dest, a, err_code);
 
         *root = root_;
     }
@@ -195,7 +202,7 @@ extern "C" {
         }
     }
 
-    char *zplj__parse_array(zplj_object_t *obj, char *base, zpl_allocator_t a) {
+    char *zplj__parse_array(zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code) {
         ZPL_ASSERT(obj && base);
         char *p = base;
 
@@ -207,7 +214,12 @@ extern "C" {
             p = zplj__trim(p);
 
             zplj_object_t elem = {0};
-            p = zplj__parse_value(&elem, p, a);
+            p = zplj__parse_value(&elem, p, a, err_code);
+            
+            if (err_code && *err_code != zplj_error_none_ev) {
+                return NULL;
+            }
+            
             zpl_array_append(obj->elements, elem);
 
             p = zplj__trim(p);
@@ -223,7 +235,7 @@ extern "C" {
         return p;
     }
 
-    char *zplj__parse_value(zplj_object_t *obj, char *base, zpl_allocator_t a) {
+    char *zplj__parse_value(zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code) {
         ZPL_ASSERT(obj && base);
         char *p = base;
         char *b = base;
@@ -313,7 +325,8 @@ extern "C" {
             }
             
             else {
-                ZPL_ASSERT_MSG(false, "Failed to parse it!\n", p);
+                if (err_code) *err_code = zplj_error_invalid_value_ev;
+                return NULL;
             }
         }
         else if (zpl_char_is_digit(*p) ||
@@ -387,7 +400,9 @@ extern "C" {
                 exp = zpl_str_to_i64(expbuf, NULL, 10);
             }
 
-            ZPL_ASSERT(*e);
+            if (*e == '\0') {
+                if (err_code) *err_code = zplj_error_invalid_value_ev;
+            }
 
             // NOTE(ZaKlaus): @enhance
             if (obj->type == zplj_type_integer_ev) {
@@ -409,19 +424,29 @@ extern "C" {
         else if (*p == '[') {
             p = zplj__trim(p+1);
             if (*p == ']') return p;
-            p = zplj__parse_array(obj, p, a);
+            p = zplj__parse_array(obj, p, a, err_code);
+            
+            if (err_code && *err_code != zplj_error_none_ev) {
+                return NULL;
+            }
+            
             ++p;
         }
         else if (*p == '{') {
             p = zplj__trim(p+1);
-            p = zplj__parse_object(obj, p, a);
+            p = zplj__parse_object(obj, p, a, err_code);
+            
+            if (err_code && *err_code != zplj_error_none_ev) {
+                return NULL;
+            }
+            
             ++p;
         }
 
         return p;
     }
     
-    char *zplj__parse_object(zplj_object_t *obj, char *base, zpl_allocator_t a) {
+    char *zplj__parse_object(zplj_object_t *obj, char *base, zpl_allocator_t a, u8 *err_code) {
         ZPL_ASSERT(obj && base);
         char *p = base;
         char *b = base;
@@ -454,12 +479,16 @@ extern "C" {
                 
                 p = ++e;
                 p = zplj__trim(p);
-                ZPL_ASSERT(*p && *p == ':');
+
+                if (*p && *p != ':') {
+                    if (err_code) *err_code = zplj_error_invalid_name_ev;
+                    return NULL;
+                }
             }
             else {
                 /**/ if (*p == '[') {
                     node.name = '\0';
-                    p = zplj__parse_value(&node, p, a);
+                    p = zplj__parse_value(&node, p, a, err_code);
                     goto l_parsed;
                 }
                 else if (zpl_char_is_alpha(*p) || *p == '_' || *p == '$') {
@@ -485,10 +514,17 @@ extern "C" {
             }
 
             char errc = 0;
-            ZPL_ASSERT_MSG(zplj__validate_name(node.name, &errc), "Failed to validate name '%s'!\n Invalid char: '%c'.\n", node.name, errc);
+            if (!zplj__validate_name(node.name, &errc)) {
+                if (err_code) *err_code = zplj_error_invalid_name_ev;
+                return NULL;
+            }
 
             p = zplj__trim(p+1);
-            p = zplj__parse_value(&node, p, a);
+            p = zplj__parse_value(&node, p, a, err_code);
+            
+            if (err_code && *err_code != zplj_error_none_ev) {
+                return NULL;
+            }
             
             l_parsed:
 
@@ -504,7 +540,8 @@ extern "C" {
                 return p;
             }
             else {
-                ZPL_ASSERT_MSG(false, "Failed to parse data!\n", p);
+                if (err_code) *err_code = zplj_error_invalid_value_ev;
+                return NULL;
             }
         }
         return p;

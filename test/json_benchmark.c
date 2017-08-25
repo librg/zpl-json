@@ -23,7 +23,7 @@ int main(void) {
     zplj_object_t root = {0};
 
     f64 time = zpl_time_now();
-    zplj_parse(&root, file_size, content, zpl_heap_allocator(), false);
+    zplj_parse(&root, file_size, content, zpl_heap_allocator(), false, NULL);
     f64 delta = zpl_time_now() - time;
 
     printf("Delta: %fms\n", delta*1000);
