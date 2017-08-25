@@ -20,6 +20,7 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    1.1.1 - Small mistake fixed
     1.1.0 - Basic JSON5 support, comments and fixes
     1.0.4 - Header file fixes
     1.0.0 - Initial version
@@ -153,7 +154,6 @@ extern "C" {
 
                 ++p;
             }
-            zpl_printf("%s\n", dest);
         }
 
         zplj_object_t root_ = {0};
