@@ -20,6 +20,7 @@ Credits:
     Dominik Madarasz (GitHub: zaklaus)
     
 Version History:
+    2.0.1 - Catch error in name
     2.0.0 - Added basic error handling
     1.4.0 - Added Infinity and NaN constants
     1.3.0 - Added multi-line backtick strings
