@@ -38,6 +38,7 @@ extern "C" {
     typedef enum zplj_type_e {
         zplj_type_object_ev,
         zplj_type_string_ev,
+        zplj_type_multistring_ev,
         zplj_type_array_ev,
         zplj_type_integer_ev,
         zplj_type_real_ev,
@@ -246,6 +247,27 @@ extern "C" {
                 ++e;
             }
 
+            *e = '\0';
+            p = e+1;
+        }
+        else if (*p == '`') {
+            obj->type = zplj_type_multistring_ev;
+            b = p+1;
+            e = b;
+            obj->string = b;
+            
+            
+            while(*e) {
+                /**/ if (*e == '\\' && *(e+1) == '`') {
+                    e += 2;
+                    continue;
+                }
+                else if (*e == '`') {
+                    break;
+                }
+                ++e;
+            }
+            
             *e = '\0';
             p = e+1;
         }

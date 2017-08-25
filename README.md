@@ -43,6 +43,10 @@ void dump_value(zplj_object_t *o, isize indent, b32 is_inline, b32 is_last) {
             zpl_printf("\"%s\"", node->string);
         }break;
 
+        case zplj_type_multistring_ev: {
+            zpl_printf("`%s`", node->string);
+        }break;
+
         case zplj_type_array_ev: {
             zpl_printf("[");
             isize elemn = zpl_array_count(node->elements);

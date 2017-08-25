@@ -5,8 +5,8 @@
 	'name3'       : 'Sailor // no commentary\' here',
 	name4    : "Peasant",
 	multiline: "Hello \
-				Darkness, \
-				my old friend.",
+	Darkness, \
+	my old friend.",
 	// this is a comment
 
 	/* Block commentary
@@ -14,6 +14,15 @@
 	   JSON5 :)
 	*/
 	blocker: "// this is a comment /* don't crash */ ",
+
+	// backtick multi-line strings (optional)
+	backtick: `
+		function foo(bar) {
+			return bar*bar;
+		}
+	`,
+
+
 	_meta : {
 		a: 3,
 		b: .4,
