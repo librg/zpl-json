@@ -1,4 +1,4 @@
-# ZPL - JSON4 parser module
+# ZPL - JSON5 parser module
 [![npm version](https://badge.fury.io/js/zpl_json.c.svg)](https://badge.fury.io/js/zpl_json.c)
 
 A simple module used for parsing JSON5 files. It offers a simple interface that is JSON and JSON5-standard friendly.
