@@ -504,7 +504,19 @@ extern "C" {
                         p = e;
                     }
                     else {
-                        p = zplj__skip(e, ':');
+                        while(*e) {
+                            if (*e && (!zpl_char_is_space(*e) || *e == ':')) {
+                                break;
+                            }
+                            ++e;
+                        }
+                        e = zplj__trim(e);
+                        p = e;
+                        
+                        if (*p && *p != ':') {
+                            if (err_code) *err_code = zplj_error_invalid_name_ev;
+                            return NULL;
+                        }                        
                     }
                     
                     *e = '\0';
