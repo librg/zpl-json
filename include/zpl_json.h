@@ -35,7 +35,20 @@ Version History:
     1.1.0 - Basic JSON5 support, comments and fixes
     1.0.4 - Header file fixes
     1.0.0 - Initial version
+    
+    
+    Copyright 2017 Dominik Madarász
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License. 
 */
 
 #ifndef ZPL_INCLUDE_ZPL_JSON_H
