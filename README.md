@@ -1,3 +1,4 @@
+# MIGRATED TO [zpl](https://github.com/zpl-c/zpl)
 # ZPL - JSON5 parser module
 [![npm version](https://badge.fury.io/js/zpl_json.c.svg)](https://badge.fury.io/js/zpl_json.c)
 
