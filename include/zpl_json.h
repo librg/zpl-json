@@ -306,7 +306,7 @@ extern "C" {
             *e = '\0';
             p = e+1;
         }
-        else if (zpl_char_is_alpha(*p) || (*p == '-' && !zpl_char_is_digit(*p))) {
+        else if (zpl_char_is_alpha(*p) || (*p == '-' && !zpl_char_is_digit(p[1]))) {
             obj->type = zplj_type_constant_ev;
 
             /**/ if (!zpl_strncmp(p, "true", 4)) {
@@ -504,7 +504,7 @@ extern "C" {
             }
             else {
                 /**/ if (*p == '[') {
-                    *node.name = '\0';
+                    node.name = 0;
                     p = zplj__parse_value(&node, p, a, err_code);
                     goto l_parsed;
                 }
